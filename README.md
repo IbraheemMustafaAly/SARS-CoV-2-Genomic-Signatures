@@ -9,7 +9,7 @@
 
 This project extends the work of **Elsherbini et al. (BMC Bioinformatics, 2024)** by applying **explainable machine learning** to alignment-free genomic signature analysis of SARS-CoV-2 clades.
 
-Instead of focusing solely on classification accuracy, this work investigates **why** certain k-mer features distinguish viral clades — providing biological interpretability through **SHAP analysis**, **CpG suppression quantification**, and **evolutionary trajectory modeling**.
+Instead of focusing solely on classification accuracy, this work investigates **why** certain k-mer features distinguish viral clades — providing biological interpretability through **SHAP analysis**, **CpG suppression quantification**, **statistical validation**, **Shannon entropy analysis**, and **evolutionary trajectory modeling**.
 
 > 📌 Dataset provided as part of the **SOLE Competition (Feb 2025)** — Dr. Mohamed Mysara, Nile University, Egypt.
 
@@ -18,13 +18,14 @@ Instead of focusing solely on classification accuracy, this work investigates **
 ## 🔬 Key Findings
 
 - **UMAP** reveals clear separation of later clades (GRA/Omicron, GK, GRY/Alpha)
-- **Random Forest** achieves **81% accuracy** on 50,000 genomes without any sequence alignment
+- **XGBoost outperforms Random Forest** (82% vs 81%) and is 30% faster
 - **SHAP analysis** reveals clade-specific k-mer signatures:
-  - **GRA/Omicron** → dominated by AT-rich motifs (ATA, TAT, GGG)
-  - **GK & GRY/Alpha** → dominated by CpG-containing motifs (CGG, CCG)
-- **CpG suppression** confirmed across all clades (~60% below expected frequency)
-- **Clade G** shows strongest CpG suppression (0.379) — suggesting rapid early host adaptation
-- **GRA/Omicron** shows lowest GC-rich dinucleotide content — breaking the evolutionary trend
+  - **GRA/Omicron** → AT-rich motifs (ATA, TAT) — distinct from all other clades
+  - **GK & GRY/Alpha** → CpG-containing motifs (CGG, CCG)
+- **CpG suppression** statistically confirmed (Kruskal-Wallis p=0.00) across all clades
+- **G vs GV** are the only non-significantly different clades in CpG (Mann-Whitney p=0.86)
+- **Clade G** shows lowest Shannon entropy (4.3715) — most genomic instability
+- All later clades stabilize at entropy ~4.3744 — evolutionary plateau confirmed
 
 ---
 
@@ -32,7 +33,7 @@ Instead of focusing solely on classification accuracy, this work investigates **
 
 ### 1. PCA — Dimensionality Reduction
 
-> After outlier removal (Z-score < 3), PCA reveals the non-linear nature of genomic signatures. Only 48% of variance is captured in 2 components, confirming that k-mer space requires non-linear methods for proper visualization.
+> After outlier removal (Z-score < 3), PCA reveals the non-linear nature of genomic signatures. Only 48% of variance is captured in 2 components.
 
 ![PCA](figures/pca_clean.png)
 
@@ -40,75 +41,107 @@ Instead of focusing solely on classification accuracy, this work investigates **
 
 ### 2. UMAP — Non-linear Visualization
 
-> UMAP clearly separates the **later clades** (GRA/Omicron, GK, GRY/Alpha) into distinct clusters, while earlier clades (G, GH, GR, GV) overlap — reflecting their evolutionary proximity.
+> UMAP clearly separates the **later clades** (GRA/Omicron, GK, GRY/Alpha), while earlier clades (G, GH, GR, GV) overlap — reflecting evolutionary proximity.
 
 ![UMAP](figures/umap_plot.png)
 
 ---
 
-### 3. Random Forest — Classification Performance
+### 3. Random Forest vs XGBoost
 
-> Random Forest achieves **81% overall accuracy** on 50,000 genomes. Later clades (GRA, GK, GRY) show the highest F1-scores, consistent with their more divergent genomic signatures.
+> XGBoost consistently outperforms Random Forest across all clades while being ~30% faster.
 
-| Clade | F1-Score |
-|-------|----------|
-| GRA (Omicron) | **0.94** |
-| GK | **0.89** |
-| GRY (Alpha) | **0.88** |
-| GV | 0.83 |
-| GH | 0.72 |
-| GR | 0.71 |
-| G | 0.67 |
+| Model | Overall Accuracy | Training Time |
+|-------|-----------------|---------------|
+| Random Forest | 81% | 56.9s |
+| **XGBoost** | **82%** | **39.2s** |
+
+| Clade | RF F1 | XGB F1 |
+|-------|-------|--------|
+| GRA (Omicron) | 0.94 | **0.95** |
+| GK | 0.89 | **0.92** |
+| GRY (Alpha) | 0.88 | **0.89** |
+| GV | 0.83 | **0.84** |
+| GH | 0.72 | **0.74** |
+| GR | 0.71 | **0.73** |
+| G | 0.67 | **0.69** |
+
+![RF vs XGBoost](figures/rf_vs_xgb.png)
+
+---
+
+### 4. Confusion Matrix
+
+> Main misclassifications occur between evolutionarily adjacent clades (G↔GH, GR↔GRY), confirming biological validity of the model.
 
 ![Confusion Matrix](figures/confusion_matrix.png)
 
 ---
 
-### 4. Feature Importance — Top k-mers
+### 5. Feature Importance
 
-> CpG-containing trinucleotides (CGG, CCG) and G/C-rich motifs dominate the top features, confirming the biological relevance of CpG dynamics in SARS-CoV-2 evolution.
+> CpG-containing trinucleotides (CGG, CCG) and G/C-rich motifs dominate — confirming biological relevance of CpG dynamics.
 
 ![Feature Importance](figures/feature_importance.png)
 
 ---
 
-### 5. SHAP Analysis — Global Explainability
+### 6. SHAP — Global Explainability
 
-> SHAP values reveal that each clade contributes differently to each k-mer feature, providing a per-clade explainability layer beyond simple accuracy metrics.
+> SHAP values reveal per-clade contribution to each k-mer feature.
 
 ![SHAP Summary](figures/shap_summary.png)
 
 ---
 
-### 6. SHAP — Per Clade Signatures
+### 7. SHAP — Per Clade Signatures
 
-> Clade-specific SHAP analysis reveals fundamentally different discriminative features:
-> - **GRA/Omicron**: AT-rich motifs (ATA, TAT) — distinct from all other clades
-> - **GK & GRY/Alpha**: CpG-containing motifs (CGG, CCG)
+> **GRA/Omicron** is driven by AT-rich motifs. **GK & GRY/Alpha** are driven by CpG motifs — fundamentally different evolutionary strategies.
 
 ![SHAP per Clade](figures/shap_per_clade.png)
 
 ---
 
-### 7. k-mer Heatmap — Mean Frequencies per Clade
+### 8. k-mer Heatmap
 
-> The heatmap confirms universal CpG suppression (CG column — dark blue across all clades) and reveals subtle differences in GC-rich motif composition between clades.
+> Universal CpG suppression confirmed (CG — dark blue across all clades). Clade G shows distinct GCG/CGC enrichment not seen in later clades.
 
 ![Heatmap](figures/heatmap_clades.png)
 
 ---
 
-### 8. CpG Suppression Quantification
+### 9. CpG Suppression Quantification
 
-> All clades show ~60% CpG suppression below the expected frequency (1.0), confirming strong host immune pressure. Clade G (earliest) shows the strongest suppression (0.379).
+> All clades show ~60% CpG suppression. Clade G (earliest) shows strongest suppression (0.379).
 
 ![CpG Quantification](figures/cpg_quantification.png)
 
 ---
 
-### 9. Evolutionary Trajectory
+### 10. Statistical Validation
 
-> CpG suppression is most pronounced in Clade G (0.379) and stabilizes (~0.406) across later clades, suggesting rapid early host adaptation followed by an evolutionary plateau. GRA/Omicron breaks the GC-rich trend — a distinct evolutionary strategy.
+> Kruskal-Wallis test confirms highly significant differences in CpG frequencies across clades (H=89,384, p=0.00). Mann-Whitney post-hoc reveals G and GV are the only non-significantly different pair (p=0.86).
+
+| Test | Result |
+|------|--------|
+| Kruskal-Wallis H | 89,384.44 |
+| p-value | 0.00 (p < 0.001) |
+| G vs GV | ❌ Not significant (p=0.86) |
+| All other pairs | ✅ Significant |
+
+---
+
+### 11. Shannon Entropy Analysis
+
+> Clade G shows the lowest entropy (4.3715 ± 0.0068) and highest variability — suggesting genomic instability in the earliest variant. All later clades stabilize at ~4.3744, confirming an evolutionary entropy plateau.
+
+![Entropy Analysis](figures/entropy_analysis.png)
+
+---
+
+### 12. Evolutionary Trajectory
+
+> CpG suppression is most pronounced in Clade G and stabilizes across later clades. GRA/Omicron breaks the GC-rich trend.
 
 ![Evolutionary Trajectory](figures/evolutionary_trajectory.png)
 
@@ -118,13 +151,15 @@ Instead of focusing solely on classification accuracy, this work investigates **
 
 | Analysis | Key Result |
 |----------|-----------|
-| PCA | 48% variance in 2 PCs — non-linear structure confirmed |
+| PCA | 48% variance — non-linear structure |
 | UMAP | GRA, GK, GRY clearly separated |
-| Random Forest Accuracy | **81%** (50k sample, no alignment) |
-| GRA F1-Score | **0.94** — highest among all clades |
-| G F1-Score | 0.67 — most difficult (earliest clade) |
-| CpG Suppression | ~60% below expected across all clades |
-| Clade G CpG | 0.379 — strongest suppression |
+| XGBoost Accuracy | **82%** — best model |
+| GRA F1-Score | **0.95** (XGBoost) |
+| CpG Suppression | ~60% below expected |
+| Kruskal-Wallis | H=89,384, p=0.00 ✅ |
+| G vs GV CpG | Not significant (p=0.86) |
+| Entropy — Clade G | 4.3715 ± 0.0068 — lowest & most variable |
+| Entropy — Later clades | ~4.3744 — stable plateau |
 
 ---
 
@@ -134,6 +169,8 @@ Instead of focusing solely on classification accuracy, this work investigates **
 SARS-CoV-2-Genomic-Signatures/
 │
 ├── README.md
+├── requirements.txt
+├── LICENSE
 │
 ├── notebooks/
 │   ├── 01_EDA_and_PCA.ipynb
@@ -143,19 +180,18 @@ SARS-CoV-2-Genomic-Signatures/
 │   ├── 05_CpG_Quantification.ipynb
 │   └── 06_Evolutionary_Trajectory.ipynb
 │
-├── figures/
-│   ├── pca_clean.png
-│   ├── umap_plot.png
-│   ├── confusion_matrix.png
-│   ├── feature_importance.png
-│   ├── shap_summary.png
-│   ├── shap_per_clade.png
-│   ├── heatmap_clades.png
-│   ├── cpg_quantification.png
-│   └── evolutionary_trajectory.png
-│
-├── requirements.txt
-└── LICENSE
+└── figures/
+    ├── pca_clean.png
+    ├── umap_plot.png
+    ├── rf_vs_xgb.png
+    ├── confusion_matrix.png
+    ├── feature_importance.png
+    ├── shap_summary.png
+    ├── shap_per_clade.png
+    ├── heatmap_clades.png
+    ├── cpg_quantification.png
+    ├── entropy_analysis.png
+    └── evolutionary_trajectory.png
 ```
 
 ---
@@ -167,20 +203,19 @@ Raw k-mer frequencies (GenoSig — 560k genomes)
               ↓
      Outlier Removal (Z-score < 3)
               ↓
-     PCA Visualization (2 components)
+     PCA + UMAP Visualization
               ↓
-     UMAP Visualization (non-linear)
+     Random Forest + XGBoost Classification
               ↓
-     Random Forest Classification
-     (50k sample, 80/20 split, stratified)
-              ↓
-     Feature Importance Analysis
-              ↓
-     SHAP Explainability per Clade
+     Feature Importance + SHAP Analysis
               ↓
      CpG Suppression Quantification
               ↓
-     Evolutionary Trajectory Analysis
+     Statistical Validation (Kruskal-Wallis + Mann-Whitney)
+              ↓
+     Shannon Entropy Analysis
+              ↓
+     Evolutionary Trajectory Modeling
 ```
 
 ---
@@ -189,12 +224,12 @@ Raw k-mer frequencies (GenoSig — 560k genomes)
 
 | # | Notebook | Description |
 |---|----------|-------------|
-| 01 | `EDA_and_PCA` | Exploratory data analysis, outlier removal, PCA |
-| 02 | `UMAP` | Non-linear dimensionality reduction |
-| 03 | `Random_Forest` | Classification, confusion matrix, F1-scores |
+| 01 | `EDA_and_PCA` | Exploratory analysis, outlier removal, PCA |
+| 02 | `UMAP` | Non-linear visualization |
+| 03 | `Random_Forest` | RF + XGBoost comparison |
 | 04 | `SHAP_Analysis` | Global and per-clade explainability |
-| 05 | `CpG_Quantification` | CpG suppression analysis + heatmap |
-| 06 | `Evolutionary_Trajectory` | Temporal trends in nucleotide composition |
+| 05 | `CpG_Quantification` | CpG analysis + statistical tests + entropy |
+| 06 | `Evolutionary_Trajectory` | Temporal trends |
 
 ---
 
@@ -203,16 +238,15 @@ Raw k-mer frequencies (GenoSig — 560k genomes)
 - **560,000 SARS-CoV-2 whole genomes** from GISAID
 - **80 features**: 16 Di-nucleotide + 64 Tri-nucleotide frequencies (normalized)
 - **7 clades**: G, GH, GK, GR, GRA, GRY, GV
-- Balanced dataset (~78k–84k genomes per clade)
 - Generated using [GenoSig](https://github.com/AhmedElsherbini/Code_for_Elsherbini_et_al_2023)
 
-> ⚠️ The raw dataset is not included in this repository. Please contact the dataset owner for access.
+> ⚠️ Raw dataset not included. Contact dataset owner for access.
 
 ---
 
 ## 👥 Authors
 
-- **Ibraheem Mustafa** — Bioinformatician & Field Application Specialist, MSc Student in Bioinformatics, University of Sadat City
+- **Ibrahim Mustafa (Bembo)** — Bioinformatician & FAS, MSc Bioinformatics, University of Sadat City
 - **Hagar El-Azab** — Bioinformatician, BSc Graduate in Biotechnology, Faculty of Agriculture, Cairo University
 
 ---
@@ -226,4 +260,4 @@ https://doi.org/10.1186/s12859-024-05648-2
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) for details.
+MIT License
