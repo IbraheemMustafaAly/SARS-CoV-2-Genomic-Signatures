@@ -246,7 +246,7 @@ Raw k-mer frequencies (GenoSig — 560k genomes)
 
 ## 👥 Authors
 
-- **Ibrahim Mustafa** — Bioinformatician & Field Application Specialist, MSc Bioinformatics, University of Sadat City
+- **Ibraheem Mustafa** — Bioinformatician & Field Application Specialist, MSc Bioinformatics, University of Sadat City
 - **Hagar El-Azab** — Bioinformatician, BSc Graduate in Biotechnology, Faculty of Agriculture, Cairo University
 
 ---
